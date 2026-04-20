@@ -8,7 +8,8 @@ Thanks for your interest in contributing! Here's how to get started.
 git clone https://github.com/aristoapp/hermes-membase.git
 cd hermes-membase
 python3 -m venv .venv
-.venv/bin/pip install -e ".[dev]"
+.venv/bin/pip install -e .
+.venv/bin/pip install ruff
 ```
 
 ## Making Changes
@@ -36,7 +37,7 @@ python3 -m venv .venv
 Run the plugin against a real Hermes install:
 
 ```bash
-pip install membase-hermes
-membase-hermes install
+pip install hermes-membase
+hermes-membase install
 hermes
 ```

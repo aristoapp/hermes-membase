@@ -20,7 +20,7 @@ from .config import (
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="membase-hermes")
+    parser = argparse.ArgumentParser(prog="hermes-membase")
     parser.add_argument(
         "--config",
         default=str(DEFAULT_CONFIG_PATH),
@@ -37,7 +37,7 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     install.add_argument(
         "--skip-login",
         action="store_true",
-        help="Skip the OAuth browser login step (run `membase-hermes login` later)",
+        help="Skip the OAuth browser login step (run `hermes-membase login` later)",
     )
 
     login = sub.add_parser("login", help="Login with OAuth PKCE")
@@ -175,7 +175,7 @@ def _cmd_status(config_path: Path) -> int:
     client = _build_client_from_config(config_path)
     try:
         if not client.is_authenticated():
-            print("Not logged in. Run: membase-hermes login", file=sys.stderr)
+            print("Not logged in. Run: hermes-membase login", file=sys.stderr)
             return 1
         profile = client.get_profile()
         print("Membase connection: OK")
@@ -215,7 +215,7 @@ def _cmd_search(args: argparse.Namespace, config_path: Path) -> int:
     client = _build_client_from_config(config_path)
     try:
         if not client.is_authenticated():
-            print("Not logged in. Run: membase-hermes login", file=sys.stderr)
+            print("Not logged in. Run: hermes-membase login", file=sys.stderr)
             return 1
         bundles = client.search(str(args.query), limit=min(int(args.limit), 100))
         print(json.dumps(bundles, indent=2))
@@ -382,7 +382,7 @@ def _cmd_install(args: argparse.Namespace, config_path: Path) -> int:
     print(f"[3/4] Membase config initialized: {config_path}")
 
     if args.skip_login:
-        print("[4/4] Skipped OAuth login. Run later: membase-hermes login")
+        print("[4/4] Skipped OAuth login. Run later: hermes-membase login")
         print()
         print("Next: run `hermes` to start the agent.")
         return 0

@@ -6,7 +6,7 @@ Hermes scans the active plugin's ``cli.py`` and expects:
 * ``membase_command(args)`` — handler invoked with the parsed args
 
 These are wired to the existing ``membase_hermes.cli.main()`` implementation
-so that ``hermes membase <cmd>`` behaves identically to ``membase-hermes <cmd>``.
+so that ``hermes membase <cmd>`` behaves identically to ``hermes-membase <cmd>``.
 """
 
 from __future__ import annotations

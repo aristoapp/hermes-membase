@@ -3,7 +3,7 @@
 Hermes plugin loader calls ``register(ctx)`` and expects
 ``ctx.register_memory_provider(provider)``.
 
-The plugin directory is self-contained: ``membase-hermes-install`` copies
+The plugin directory is self-contained: ``hermes-membase-install`` copies
 the full ``membase_hermes`` package source alongside this file so that no
 external pip install into Hermes's venv is required.
 

@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "membase-hermes"
+name = "hermes-membase"
 version = "0.1.0"
 description = "Membase memory provider package for Hermes Agent"
 readme = "README.md"
@@ -14,8 +14,8 @@ dependencies = [
 ]
 
 [project.scripts]
-membase-hermes = "membase_hermes.cli:main"
-membase-hermes-install = "membase_hermes.installer:main"
+hermes-membase = "membase_hermes.cli:main"
+hermes-membase-install = "membase_hermes.installer:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -23,10 +23,8 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[dependency-groups]
-dev = [
-    "ruff>=0.14.0",
-]
+[tool.setuptools.package-data]
+membase_hermes = ["plugin/*.yaml"]
 
 [tool.ruff]
 line-length = 88

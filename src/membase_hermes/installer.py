@@ -20,8 +20,8 @@ The plugin directory is fully self-contained after installation:
 This means NO pip install into Hermes's venv is required.
 Real-user install is just two commands:
 
-    pip install membase-hermes
-    membase-hermes-install
+    pip install hermes-membase
+    hermes-membase-install
 """
 
 from __future__ import annotations

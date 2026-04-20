@@ -1,0 +1,39 @@
+name: Publish hermes-membase to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -n "${PYPI_API_TOKEN}" ]; then
+            twine upload -u __token__ -p "${PYPI_API_TOKEN}" dist/*
+          else
+            echo "PYPI_API_TOKEN is not set. Use Trusted Publisher or set the secret."
+            exit 1
+          fi

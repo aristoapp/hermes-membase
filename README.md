@@ -1,6 +1,6 @@
 <h1 align="center">Membase Plugin for Hermes Agent</h1>
 
-[![Membase banner](https://github.com/user-attachments/assets/19393af8-7af0-4e8f-9967-b5c9d8119d83)](https://membase.so/?utm_source=github&utm_medium=hermes-membase)
+[![Hermes x Membase banner](https://raw.githubusercontent.com/aristoapp/hermes-membase/main/hermes-membase-banner.png)](https://membase.so/?utm_source=github&utm_medium=hermes-membase)
 
 <p align="center">
   Persistent long-term memory for Hermes Agent using hybrid vector search and a knowledge graph.
@@ -10,7 +10,7 @@
   <a href="https://x.com/intent/follow?screen_name=mem_base"><img src="https://img.shields.io/badge/Follow%20on%20X-000000?style=for-the-badge&logo=x&logoColor=white" alt="Follow on X"></a>
   <a href="https://www.linkedin.com/company/aristotechnologies"><img src="https://img.shields.io/badge/Follow%20on%20LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="Follow on LinkedIn"></a>
   <a href="https://discord.gg/qfzXNdtmkv"><img src="https://img.shields.io/badge/Join%20Our%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join Our Discord"></a>
-  <a href="https://pypi.org/project/membase-hermes/"><img src="https://img.shields.io/pypi/v/membase-hermes?style=for-the-badge&color=blue" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/hermes-membase/"><img src="https://img.shields.io/pypi/v/hermes-membase?style=for-the-badge&color=blue" alt="PyPI version"></a>
 </p>
 
 <p align="center">
@@ -25,8 +25,10 @@ Give your [Hermes Agent](https://hermes-agent.nousresearch.com/) persistent memo
 
 ## Install
 
+> Requires Python 3.9 or newer.
+
 ```bash
-pip install membase-hermes && membase-hermes install
+pip install hermes-membase && hermes-membase install
 ```
 
 This single command does everything:
@@ -36,12 +38,12 @@ This single command does everything:
 3. Writes default config to `~/.hermes/membase.json`
 4. Opens a browser window for OAuth login
 
-Pass `--skip-login` to defer the login step and run `membase-hermes login` later.
+Pass `--skip-login` to defer the login step and run `hermes-membase login` later.
 
 ## Setup
 
 ```bash
-membase-hermes login
+hermes-membase login
 ```
 
 Opens a browser for OAuth authentication. Tokens are saved automatically, so there are no API keys to copy and paste.
@@ -81,8 +83,8 @@ User message
 ```
 
 - **Auto-Recall**: Before every AI turn, searches memory and wiki context (when enabled) and injects relevant snippets. Skips casual chat and short messages. Respects a `maxRecallChars` budget (default 4000) to avoid oversized context.
-- **Auto-Capture**: Buffers conversation turns and flushes them to Membase at session end. Flushes after 5 minutes of silence or 20 messages. Requires at least 2 messages to avoid capturing one-off queries.
-- **Mirror Built-in**: When Hermes writes to its built-in memory files (`USER.md`, `MEMORY.md`) via the `memory` tool, those writes are automatically mirrored to Membase in the background. A local hash index prevents duplicates.
+- **Auto-Capture**: Buffers conversation turns and flushes them to Membase at session end. Flushes after 5 minutes of silence or 20 messages. Requires at least 2 messages and 50+ characters total to avoid capturing one-off queries.
+- **Mirror Built-in**: When Hermes writes to its built-in `MEMORY.md` via the `memory` tool, those writes are automatically mirrored to Membase in the background. A local hash index prevents duplicates.
 - **Knowledge Graph**: Unlike simple vector-only memory, Membase uses hybrid vector search and a knowledge graph to store entities, relationships, and facts.
 
 ## AI Tools
@@ -103,13 +105,13 @@ The agent uses these tools autonomously during conversations:
 ## CLI Commands
 
 ```bash
-membase-hermes install              # One-shot install and OAuth login
-membase-hermes login                # OAuth login (PKCE): opens browser
-membase-hermes logout               # Remove stored tokens
-membase-hermes status               # Check API connectivity and profile
-membase-hermes search "<query>"     # Search memories from the terminal
-membase-hermes resync               # Rebuild mirror index from MEMORY.md
-membase-hermes resync --dry-run     # Preview resync without writing
+hermes-membase install              # One-shot install and OAuth login
+hermes-membase login                # OAuth login (PKCE): opens browser
+hermes-membase logout               # Remove stored tokens
+hermes-membase status               # Check API connectivity and profile
+hermes-membase search "<query>"     # Search memories from the terminal
+hermes-membase resync               # Rebuild mirror index from MEMORY.md
+hermes-membase resync --dry-run     # Preview resync without writing
 ```
 
 These are also available as `hermes membase <cmd>` from inside the Hermes TUI after installation.
@@ -120,7 +122,6 @@ Config is stored in `~/.hermes/membase.json`. All keys are optional and have sen
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `apiUrl` | string | `https://api.membase.so` | Membase API URL. Override for self-hosted. |
 | `tokenFile` | string | `~/.hermes/credentials/membase.json` | OAuth token cache path. Stored outside the plugin directory so it survives updates. |
 | `autoRecall` | boolean | `false` | Inject relevant memories before every AI turn. |
 | `autoWikiRecall` | boolean | `false` | Inject relevant wiki documents before every AI turn. |
@@ -133,7 +134,6 @@ Example `~/.hermes/membase.json`:
 
 ```json
 {
-  "apiUrl": "https://api.membase.so",
   "autoRecall": true,
   "autoCapture": true,
   "mirrorBuiltin": true,
@@ -157,7 +157,7 @@ Example `~/.hermes/membase.json`:
 git clone https://github.com/aristoapp/hermes-membase.git
 cd hermes-membase
 python3 -m venv .venv
-.venv/bin/pip install -e ".[dev]"
+.venv/bin/pip install -e .
 ```
 
 ## Contributing
