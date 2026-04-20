@@ -25,11 +25,12 @@ Give your [Hermes Agent](https://hermes-agent.nousresearch.com/) persistent memo
 
 ## Install
 
-> Requires Python 3.9 or newer.
-
 ```bash
-pip install hermes-membase && hermes-membase install
+uv tool install hermes-membase && hermes-membase install
 ```
+
+> Hermes installs `uv` automatically, so this works out of the box.  
+> No `uv`? Use `pip install hermes-membase && hermes-membase install` instead.
 
 This single command does everything:
 

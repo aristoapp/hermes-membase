@@ -17,6 +17,7 @@ from .config import (
     write_token_file,
     TokenPair,
 )
+from .star_prompt import maybe_prompt_github_star
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
@@ -166,6 +167,11 @@ def _cmd_login(args: argparse.Namespace, config_path: Path) -> int:
         config_path,
     )
     print("OAuth login complete. Credentials saved.")
+    try:
+        maybe_prompt_github_star()
+    except Exception:
+        # Best-effort UX only; never fail login flow.
+        pass
     return 0
 
 

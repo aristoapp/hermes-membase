@@ -23,6 +23,7 @@ from .config import (
 )
 from .mirror import MirrorAction, MirrorStore, MirrorWorker
 from .sanitize import is_casual_chat, is_operational_message, sanitize_membase_text, sanitize_recall_query
+from .update_check import consume_update_notice, start_background_update_check
 
 try:
     from agent.memory_provider import MemoryProvider  # type: ignore
@@ -165,6 +166,7 @@ class MembaseMemoryProvider(MemoryProvider):
         )
         self._mirror_worker.start()
         self._start_prefetch_worker()
+        start_background_update_check()
 
     def _on_token_refresh(self, access_token: str, refresh_token: str) -> None:
         if not self._config:
@@ -505,6 +507,16 @@ class MembaseMemoryProvider(MemoryProvider):
             },
         )
 
+    def _success_result(self, payload: dict[str, Any]) -> str:
+        """Attach ambient update notice (once/day) on successful tool responses."""
+        try:
+            notice = consume_update_notice()
+        except Exception:
+            notice = None
+        if notice:
+            payload = {**payload, "membase_update_notice": notice}
+        return _json_result(payload)
+
     def handle_tool_call(self, tool_name: str, args: dict[str, Any], **kwargs: Any) -> str:
         auth_error = self._auth_guard()
         if auth_error:
@@ -523,7 +535,7 @@ class MembaseMemoryProvider(MemoryProvider):
                     sources=args.get("sources"),
                     project=args.get("project"),
                 )
-                return _json_result({"ok": True, "episodes": bundles})
+                return self._success_result({"ok": True, "episodes": bundles})
 
             if tool_name == TOOL_MEMBASE_STORE:
                 content = str(args.get("content", ""))
@@ -536,12 +548,12 @@ class MembaseMemoryProvider(MemoryProvider):
                 )
                 if self._mirror_store:
                     self._mirror_store.mark_local_store(content)
-                return _json_result({"ok": True, "result": result})
+                return self._success_result({"ok": True, "result": result})
 
             if tool_name == TOOL_MEMBASE_PROFILE:
                 profile = client.get_profile()
                 profile_memory = client.get_user_profile_memory()
-                return _json_result(
+                return self._success_result(
                     {
                         "ok": True,
                         "profile": profile,
@@ -554,10 +566,10 @@ class MembaseMemoryProvider(MemoryProvider):
                 uuid = str(args.get("uuid", "")).strip()
                 if confirm and uuid:
                     client.delete_memory(uuid)
-                    return _json_result({"ok": True, "deleted_uuid": uuid})
+                    return self._success_result({"ok": True, "deleted_uuid": uuid})
                 query = str(args.get("query", ""))
                 matches = client.search(query, limit=5)
-                return _json_result(
+                return self._success_result(
                     {
                         "ok": True,
                         "confirm_required": True,
@@ -571,7 +583,7 @@ class MembaseMemoryProvider(MemoryProvider):
                     limit=int(args.get("limit", 10)),
                     collection_id=args.get("collection_id"),
                 )
-                return _json_result({"ok": True, "result": result})
+                return self._success_result({"ok": True, "result": result})
 
             if tool_name == TOOL_MEMBASE_WIKI_ADD:
                 title = str(args.get("title", ""))
@@ -586,7 +598,7 @@ class MembaseMemoryProvider(MemoryProvider):
                     collection_id=args.get("collection_id"),
                     summarize=bool(args.get("summarize", False)),
                 )
-                return _json_result({"ok": True, "result": doc})
+                return self._success_result({"ok": True, "result": doc})
 
             if tool_name == TOOL_MEMBASE_WIKI_UPDATE:
                 doc_id = str(args.get("doc_id", "")).strip()
@@ -607,14 +619,14 @@ class MembaseMemoryProvider(MemoryProvider):
                         },
                     )
                 doc = client.update_wiki_document(doc_id, updates)
-                return _json_result({"ok": True, "result": doc})
+                return self._success_result({"ok": True, "result": doc})
 
             if tool_name == TOOL_MEMBASE_WIKI_DELETE:
                 doc_id = str(args.get("doc_id", "")).strip()
                 if not doc_id:
                     return _json_result({"ok": False, "error": "doc_id is required"})
                 client.delete_wiki_document(doc_id)
-                return _json_result({"ok": True, "deleted_doc_id": doc_id})
+                return self._success_result({"ok": True, "deleted_doc_id": doc_id})
 
             return _json_result({"ok": False, "error": f"unknown tool: {tool_name}"})
         except MembaseApiError as error:
