@@ -52,6 +52,8 @@ def register_cli(subparser: argparse.ArgumentParser) -> None:
     resync.add_argument("--mirror-index", default="")
     resync.add_argument("--dry-run", action="store_true")
 
+    subparser.set_defaults(func=membase_command)
+
 
 def _args_to_argv(args: argparse.Namespace) -> list[str]:
     argv: list[str] = ["--config", str(args.config)]
