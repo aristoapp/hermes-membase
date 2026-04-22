@@ -255,12 +255,15 @@ class MembaseClient:
         query: str,
         limit: int | None = None,
         collection_id: str | None = None,
+        collection: str | None = None,
     ) -> dict[str, Any]:
         params: dict[str, Any] = {"query": query}
         if limit is not None:
             params["limit"] = str(limit)
         if collection_id:
             params["collection_id"] = collection_id
+        if collection:
+            params["collection"] = collection
         payload = self._request("GET", "/wiki/search", params=params)
         return payload if isinstance(payload, dict) else {"documents": []}
 
@@ -269,18 +272,25 @@ class MembaseClient:
         title: str,
         content: str,
         collection_id: str | None = None,
+        collection: str | None = None,
         summarize: bool = False,
     ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "title": title,
+            "content": content,
+            "source": self.source,
+            "summarize": summarize,
+        }
+        # Prefer the human-readable name when provided so the server
+        # performs lookup-or-create via the ``slug`` unique index.
+        if collection:
+            body["collection"] = collection
+        elif collection_id is not None:
+            body["collection_id"] = collection_id
         payload = self._request(
             "POST",
             "/wiki/documents",
-            json_body={
-                "title": title,
-                "content": content,
-                "collection_id": collection_id,
-                "source": self.source,
-                "summarize": summarize,
-            },
+            json_body=body,
         )
         return payload if isinstance(payload, dict) else {}
 

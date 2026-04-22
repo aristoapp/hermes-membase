@@ -446,7 +446,13 @@ class MembaseMemoryProvider(MemoryProvider):
                     "properties": {
                         "query": {"type": "string"},
                         "limit": {"type": "number"},
-                        "collection_id": {"type": "string"},
+                        "collection": {
+                            "type": "string",
+                            "description": (
+                                "Optional collection name to scope the search. "
+                                "Use the same name the user referred to; leave empty when no collection is specified."
+                            ),
+                        },
                     },
                     "required": ["query"],
                 },
@@ -459,7 +465,14 @@ class MembaseMemoryProvider(MemoryProvider):
                     "properties": {
                         "title": {"type": "string"},
                         "content": {"type": "string"},
-                        "collection_id": {"type": "string"},
+                        "collection": {
+                            "type": "string",
+                            "description": (
+                                "Collection name to file the document under. Set ONLY when the user explicitly names "
+                                "a collection, tag, or category (e.g., 'save to Work wiki'). New collections are "
+                                "created on first use. Do not guess or invent a name."
+                            ),
+                        },
                         "summarize": {"type": "boolean"},
                     },
                     "required": ["title", "content"],
@@ -474,7 +487,13 @@ class MembaseMemoryProvider(MemoryProvider):
                         "doc_id": {"type": "string"},
                         "title": {"type": "string"},
                         "content": {"type": "string"},
-                        "collection_id": {"type": "string"},
+                        "collection": {
+                            "type": "string",
+                            "description": (
+                                "Move the document to a different collection by name. "
+                                "New collections are created on first use."
+                            ),
+                        },
                     },
                     "required": ["doc_id"],
                 },
@@ -581,7 +600,7 @@ class MembaseMemoryProvider(MemoryProvider):
                 result = client.search_wiki(
                     query=str(args.get("query", "")),
                     limit=int(args.get("limit", 10)),
-                    collection_id=args.get("collection_id"),
+                    collection=args.get("collection"),
                 )
                 return self._success_result({"ok": True, "result": result})
 
@@ -595,7 +614,7 @@ class MembaseMemoryProvider(MemoryProvider):
                 doc = client.create_wiki_document(
                     title=title,
                     content=content,
-                    collection_id=args.get("collection_id"),
+                    collection=args.get("collection"),
                     summarize=bool(args.get("summarize", False)),
                 )
                 return self._success_result({"ok": True, "result": doc})
@@ -609,13 +628,13 @@ class MembaseMemoryProvider(MemoryProvider):
                     updates["title"] = args.get("title")
                 if args.get("content") is not None:
                     updates["content"] = args.get("content")
-                if args.get("collection_id") is not None:
-                    updates["collection_id"] = args.get("collection_id")
+                if args.get("collection") is not None:
+                    updates["collection"] = args.get("collection")
                 if not updates:
                     return _json_result(
                         {
                             "ok": False,
-                            "error": "at least one of title/content/collection_id is required",
+                            "error": "at least one of title/content/collection is required",
                         },
                     )
                 doc = client.update_wiki_document(doc_id, updates)
