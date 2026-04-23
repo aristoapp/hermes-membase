@@ -1,6 +1,6 @@
 <h1 align="center">Membase Plugin for Hermes Agent</h1>
 
-[![Hermes x Membase banner](<img width="1584" height="396" alt="Linkedin_aristo" src="https://github.com/user-attachments/assets/ed008859-174a-4469-845b-afa844511cfd" />
+[![Hermes x Membase banner](https://github.com/user-attachments/assets/ed008859-174a-4469-845b-afa844511cfd
 )](https://membase.so/?utm_source=github&utm_medium=hermes-membase)
 
 <p align="center">
