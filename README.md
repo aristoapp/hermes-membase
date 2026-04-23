@@ -1,6 +1,7 @@
 <h1 align="center">Membase Plugin for Hermes Agent</h1>
 
-[![Hermes x Membase banner](https://raw.githubusercontent.com/aristoapp/hermes-membase/main/hermes-membase-banner.png)](https://membase.so/?utm_source=github&utm_medium=hermes-membase)
+[![Hermes x Membase banner](<img width="1584" height="396" alt="Linkedin_aristo" src="https://github.com/user-attachments/assets/ed008859-174a-4469-845b-afa844511cfd" />
+)](https://membase.so/?utm_source=github&utm_medium=hermes-membase)
 
 <p align="center">
   Persistent long-term memory for Hermes Agent using hybrid vector search and a knowledge graph.
