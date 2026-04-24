@@ -116,11 +116,7 @@ def _is_same_utc_day(iso_value: str | None, now: datetime) -> bool:
         return False
     ts_utc = ts.astimezone(UTC)
     now_utc = now.astimezone(UTC)
-    return (
-        ts_utc.year == now_utc.year
-        and ts_utc.month == now_utc.month
-        and ts_utc.day == now_utc.day
-    )
+    return ts_utc.year == now_utc.year and ts_utc.month == now_utc.month and ts_utc.day == now_utc.day
 
 
 def _is_fresh_check(checked_at: str, now: datetime) -> bool:
@@ -137,11 +133,7 @@ def refresh_latest_version() -> None:
     current = _current_version()
     with _STATE_LOCK:
         existing = _load_state()
-        if (
-            existing
-            and existing.current_version == current
-            and _is_fresh_check(existing.checked_at, now)
-        ):
+        if existing and existing.current_version == current and _is_fresh_check(existing.checked_at, now):
             return
 
     latest = _fetch_latest_version()

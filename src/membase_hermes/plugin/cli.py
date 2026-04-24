@@ -43,10 +43,6 @@ def register_cli(subparser: argparse.ArgumentParser) -> None:
     commands.add_parser("status", help="Check Membase API connectivity")
     commands.add_parser("logout", help="Remove stored tokens")
 
-    search = commands.add_parser("search", help="Search memory")
-    search.add_argument("query")
-    search.add_argument("--limit", type=int, default=10)
-
     resync = commands.add_parser("resync", help="Rebuild mirror index from MEMORY.md")
     resync.add_argument("--memory-file", default="")
     resync.add_argument("--mirror-index", default="")
@@ -61,8 +57,6 @@ def _args_to_argv(args: argparse.Namespace) -> list[str]:
     argv.append(sub)
     if sub == "login":
         argv += ["--api-url", args.api_url, "--port", str(args.port)]
-    elif sub == "search":
-        argv += [args.query, "--limit", str(args.limit)]
     elif sub == "resync":
         if args.memory_file:
             argv += ["--memory-file", args.memory_file]
@@ -73,13 +67,13 @@ def _args_to_argv(args: argparse.Namespace) -> list[str]:
     return argv
 
 
-def membase_command(args: argparse.Namespace) -> int:
+def membase_command(args: argparse.Namespace) -> None:
     try:
         from _membase_hermes.cli import main as membase_cli_main  # bundled
     except ImportError:
         from membase_hermes.cli import main as membase_cli_main  # local dev
 
-    return membase_cli_main(_args_to_argv(args))
+    raise SystemExit(membase_cli_main(_args_to_argv(args)))
 
 
 def register(ctx: Any) -> None:

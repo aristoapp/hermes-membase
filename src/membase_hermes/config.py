@@ -170,10 +170,8 @@ def parse_config(raw_config: Mapping[str, Any] | None = None) -> MembaseConfig:
         api_url=_str(raw_config.get("apiUrl"), "") or DEFAULT_API_URL,
         client_id=_str(raw_config.get("clientId"), ""),
         token_file=token_file,
-        access_token=file_tokens.access_token
-        or normalize_token_value(raw_config.get("accessToken")),
-        refresh_token=file_tokens.refresh_token
-        or normalize_token_value(raw_config.get("refreshToken")),
+        access_token=file_tokens.access_token or normalize_token_value(raw_config.get("accessToken")),
+        refresh_token=file_tokens.refresh_token or normalize_token_value(raw_config.get("refreshToken")),
         auto_recall=_bool(raw_config.get("autoRecall"), False),
         auto_wiki_recall=_bool(raw_config.get("autoWikiRecall"), False),
         auto_capture=_bool(raw_config.get("autoCapture"), True),

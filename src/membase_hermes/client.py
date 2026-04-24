@@ -88,11 +88,7 @@ class MembaseClient:
             )
             if response.status_code >= 400:
                 raise MembaseApiError(
-                    (
-                        "Token refresh failed "
-                        f"({response.status_code}). "
-                        "Run 'hermes membase login' to re-authenticate."
-                    ),
+                    (f"Token refresh failed ({response.status_code}). Run 'hermes membase login' to re-authenticate."),
                     response.status_code,
                     response.text,
                 )
@@ -177,6 +173,37 @@ class MembaseClient:
         sources: list[str] | None = None,
         project: str | None = None,
     ) -> list[dict[str, Any]]:
+        bundles = self.search_bundles(
+            query=query,
+            limit=limit,
+            offset=offset,
+            date_from=date_from,
+            date_to=date_to,
+            timezone=timezone,
+            sources=sources,
+            project=project,
+        )
+        episodes: list[dict[str, Any]] = []
+        for item in bundles:
+            if isinstance(item, dict) and "episode" in item:
+                ep = item["episode"]
+                if isinstance(ep, dict):
+                    episodes.append(ep)
+            elif isinstance(item, dict):
+                episodes.append(item)
+        return episodes
+
+    def search_bundles(
+        self,
+        query: str,
+        limit: int = 20,
+        offset: int | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        timezone: str | None = None,
+        sources: list[str] | None = None,
+        project: str | None = None,
+    ) -> list[dict[str, Any]]:
         params: list[tuple[str, str]] = [
             ("query", query),
             ("limit", str(limit)),
@@ -198,15 +225,7 @@ class MembaseClient:
         bundles = payload.get("episodes") if isinstance(payload, dict) else None
         if not isinstance(bundles, list):
             return []
-        episodes: list[dict[str, Any]] = []
-        for item in bundles:
-            if isinstance(item, dict) and "episode" in item:
-                ep = item["episode"]
-                if isinstance(ep, dict):
-                    episodes.append(ep)
-            elif isinstance(item, dict):
-                episodes.append(item)
-        return episodes
+        return [item for item in bundles if isinstance(item, dict)]
 
     def ingest(
         self,

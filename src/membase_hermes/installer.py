@@ -39,8 +39,8 @@ def _get_hermes_home() -> Path:
 
 
 def install_plugin_payload(target_dir: Path | None = None) -> Path:
-    pkg_root = Path(__file__).resolve().parent           # membase_hermes/
-    plugin_src = pkg_root / "plugin"                     # membase_hermes/plugin/
+    pkg_root = Path(__file__).resolve().parent  # membase_hermes/
+    plugin_src = pkg_root / "plugin"  # membase_hermes/plugin/
 
     if not plugin_src.exists():
         raise FileNotFoundError(f"Plugin payload not found: {plugin_src}")

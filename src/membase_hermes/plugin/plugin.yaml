@@ -1,5 +1,5 @@
 name: membase
-version: 0.1.4
+version: 0.1.5
 description: "Membase memory provider for Hermes Agent (OAuth, recall/capture, wiki tools)."
 pip_dependencies:
- - hermes-membase
+ - hermes-membase>=0.1.5

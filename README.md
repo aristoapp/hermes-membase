@@ -65,7 +65,7 @@ User message
             ▼
 ┌─────────────────────────┐
 │  AI Response            │  Agent can call memory and wiki tools
-│                         │  (membase_search, membase_wiki_add, etc.)
+│                         │  (membase_search, membase_add_wiki, etc.)
 └───────────┬─────────────┘
             ▼
 ┌─────────────────────────┐
@@ -85,7 +85,7 @@ User message
 ```
 
 - **Auto-Recall**: Before every AI turn, searches memory and wiki context (when enabled) and injects relevant snippets. Skips casual chat and short messages. Respects a `maxRecallChars` budget (default 4000) to avoid oversized context.
-- **Auto-Capture**: Buffers conversation turns and flushes them to Membase at session end. Flushes after 5 minutes of silence or 20 messages. Requires at least 2 messages and 50+ characters total to avoid capturing one-off queries.
+- **Auto-Capture**: Buffers user messages and flushes them to Membase at session end. During an active session it flushes after 5 minutes of silence or 20 buffered messages. Requires 50+ characters total to avoid capturing tiny one-off messages.
 - **Mirror Built-in**: When Hermes writes to its built-in `MEMORY.md` via the `memory` tool, those writes are automatically mirrored to Membase in the background. A local hash index prevents duplicates.
 - **Knowledge Graph**: Unlike simple vector-only memory, Membase uses hybrid vector search and a knowledge graph to store entities, relationships, and facts.
 
@@ -95,14 +95,14 @@ The agent uses these tools autonomously during conversations:
 
 | Tool | Description |
 | --- | --- |
-| `membase_search` | Search memories by semantic similarity. Supports date filtering (`date_from`, `date_to`, `timezone`) and source filtering (`sources`). Returns episode bundles with related facts. |
-| `membase_store` | Save important information to long-term memory. Use for preferences, goals, decisions, and context. |
+| `membase_search` | Search memories by semantic similarity. Supports date filtering (`date_from`, `date_to`, `timezone`) and source filtering (`sources`). Defaults to 20 results and caps at 30. Returns a compact OpenClaw-compatible text list with related facts, not raw bundles. Long summaries/facts are preview-truncated in Hermes tool output. |
+| `membase_store` | Save important information to long-term memory. Use for preferences, goals, decisions, and context. Requires `display_summary` and caps content at 50,000 characters. |
 | `membase_forget` | Delete a memory. Shows matches first, then deletes after confirmation (two-step). |
 | `membase_profile` | Retrieve user profile and related memories for session context. |
-| `membase_wiki_search` | Search wiki documents for stable factual references. |
-| `membase_wiki_add` | Create a wiki document from markdown content. |
-| `membase_wiki_update` | Update title, content, or collection of an existing wiki document. |
-| `membase_wiki_delete` | Delete a wiki document. |
+| `membase_search_wiki` | Search wiki documents for stable factual references. Defaults to 10 results and caps at 20. Returns full document content, matching MCP and OpenClaw behavior. |
+| `membase_add_wiki` | Create a wiki document from markdown content. |
+| `membase_update_wiki` | Update title, content, or collection of an existing wiki document. |
+| `membase_delete_wiki` | Delete a wiki document. Shows matches first, then deletes after confirmation (two-step). |
 
 ## CLI Commands
 
@@ -111,7 +111,6 @@ hermes-membase install              # One-shot install and OAuth login
 hermes-membase login                # OAuth login (PKCE): opens browser
 hermes-membase logout               # Remove stored tokens
 hermes-membase status               # Check API connectivity and profile
-hermes-membase search "<query>"     # Search memories from the terminal
 hermes-membase resync               # Rebuild mirror index from MEMORY.md
 hermes-membase resync --dry-run     # Preview resync without writing
 ```
@@ -158,8 +157,27 @@ Example `~/.hermes/membase.json`:
 ```bash
 git clone https://github.com/aristoapp/hermes-membase.git
 cd hermes-membase
-python3 -m venv .venv
-.venv/bin/pip install -e .
+uv sync --dev
+```
+
+Requires Python 3.11 or newer, matching Hermes Agent's runtime.
+
+Run the full local verification suite before opening a PR:
+
+```bash
+make check
+```
+
+Useful individual targets:
+
+```bash
+make typecheck      # mypy static type checks
+make lint           # Ruff lint checks
+make format         # Apply Ruff formatting
+make format-check   # Verify formatting without writing
+make test           # Unit tests
+make build          # Build sdist and wheel
+make verify-dist    # Build and validate package metadata
 ```
 
 ## Contributing

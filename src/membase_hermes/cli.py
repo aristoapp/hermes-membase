@@ -67,10 +67,6 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         help="Preview without writing mirror index",
     )
 
-    search = sub.add_parser("search", help="Search memory")
-    search.add_argument("query")
-    search.add_argument("--limit", type=int, default=10)
-
     return parser.parse_args(argv)
 
 
@@ -218,24 +214,6 @@ def _cmd_logout(config_path: Path) -> int:
     return 0
 
 
-def _cmd_search(args: argparse.Namespace, config_path: Path) -> int:
-    from .client import MembaseApiError
-
-    client = _build_client_from_config(config_path)
-    try:
-        if not client.is_authenticated():
-            print("Not logged in. Run: hermes-membase login", file=sys.stderr)
-            return 1
-        bundles = client.search(str(args.query), limit=min(int(args.limit), 100))
-        print(json.dumps(bundles, indent=2))
-        return 0
-    except MembaseApiError as error:
-        print(f"Search failed: {error}", file=sys.stderr)
-        return 1
-    finally:
-        client.close()
-
-
 def _content_hash(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
@@ -263,11 +241,7 @@ def _cmd_resync(args: argparse.Namespace, config_path: Path) -> int:
     from .client import MembaseApiError
 
     hermes_home = config_path.parent
-    memory_file = (
-        Path(args.memory_file).expanduser()
-        if str(args.memory_file).strip()
-        else hermes_home / "MEMORY.md"
-    )
+    memory_file = Path(args.memory_file).expanduser() if str(args.memory_file).strip() else hermes_home / "MEMORY.md"
     mirror_index_path = (
         Path(args.mirror_index).expanduser()
         if str(args.mirror_index).strip()
@@ -289,6 +263,8 @@ def _cmd_resync(args: argparse.Namespace, config_path: Path) -> int:
                 uuid = "resynced"
                 for match in matches:
                     episode = match.get("episode") if isinstance(match, dict) else None
+                    if not isinstance(episode, dict) and isinstance(match, dict):
+                        episode = match
                     if not isinstance(episode, dict):
                         continue
                     content = str(episode.get("content", "") or "").strip()
@@ -418,8 +394,6 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_status(config_path)
     if args.command == "logout":
         return _cmd_logout(config_path)
-    if args.command == "search":
-        return _cmd_search(args, config_path)
     if args.command == "resync":
         return _cmd_resync(args, config_path)
 
