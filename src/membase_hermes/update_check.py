@@ -5,7 +5,7 @@ import threading
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from importlib import metadata
 from pathlib import Path
 
@@ -51,11 +51,11 @@ def _parse_version(value: str) -> list[int]:
 
 def is_newer_version(remote: str, local: str) -> bool:
     r = _parse_version(remote)
-    l = _parse_version(local)
-    width = max(len(r), len(l), 3)
+    loc = _parse_version(local)
+    width = max(len(r), len(loc), 3)
     for i in range(width):
         rv = r[i] if i < len(r) else 0
-        lv = l[i] if i < len(l) else 0
+        lv = loc[i] if i < len(loc) else 0
         if rv > lv:
             return True
         if rv < lv:
@@ -114,8 +114,8 @@ def _is_same_utc_day(iso_value: str | None, now: datetime) -> bool:
         ts = datetime.fromisoformat(iso_value.replace("Z", "+00:00"))
     except Exception:
         return False
-    ts_utc = ts.astimezone(timezone.utc)
-    now_utc = now.astimezone(timezone.utc)
+    ts_utc = ts.astimezone(UTC)
+    now_utc = now.astimezone(UTC)
     return (
         ts_utc.year == now_utc.year
         and ts_utc.month == now_utc.month
@@ -128,12 +128,12 @@ def _is_fresh_check(checked_at: str, now: datetime) -> bool:
         ts = datetime.fromisoformat(checked_at.replace("Z", "+00:00"))
     except Exception:
         return False
-    return (now - ts.astimezone(timezone.utc)) < CACHE_TTL
+    return (now - ts.astimezone(UTC)) < CACHE_TTL
 
 
 def refresh_latest_version() -> None:
     """Fetch latest PyPI version in a non-fatal way and cache state."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     current = _current_version()
     with _STATE_LOCK:
         existing = _load_state()
@@ -163,7 +163,7 @@ def refresh_latest_version() -> None:
 
 def consume_update_notice() -> str | None:
     """Return notice text at most once per UTC day, else None."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     current = _current_version()
     with _STATE_LOCK:
         state = _load_state()

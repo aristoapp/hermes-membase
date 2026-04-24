@@ -22,7 +22,12 @@ from .config import (
     write_token_file,
 )
 from .mirror import MirrorAction, MirrorStore, MirrorWorker
-from .sanitize import is_casual_chat, is_operational_message, sanitize_membase_text, sanitize_recall_query
+from .sanitize import (
+    is_casual_chat,
+    is_operational_message,
+    sanitize_membase_text,
+    sanitize_recall_query,
+)
 from .update_check import consume_update_notice, start_background_update_check
 
 try:
@@ -167,6 +172,14 @@ class MembaseMemoryProvider(MemoryProvider):
         self._mirror_worker.start()
         self._start_prefetch_worker()
         start_background_update_check()
+        # Register this connection with Membase so the agent appears in the
+        # dashboard's Agents tab. Fire-and-forget on a background thread so
+        # network hiccups never block provider initialization.
+        threading.Thread(
+            target=self._client.register_connection,
+            name="membase-register-connection",
+            daemon=True,
+        ).start()
 
     def _on_token_refresh(self, access_token: str, refresh_token: str) -> None:
         if not self._config:

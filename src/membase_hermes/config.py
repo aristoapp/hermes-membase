@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 DEFAULT_API_URL = "https://api.membase.so"
 REDACTED_TOKEN_SENTINEL = "__HERMES_REDACTED__"

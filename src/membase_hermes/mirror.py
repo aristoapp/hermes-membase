@@ -7,7 +7,6 @@ import queue
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from .client import MembaseClient
 

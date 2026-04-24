@@ -4,7 +4,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = "aristoapp/hermes-membase"
@@ -25,7 +25,7 @@ def _has_been_prompted() -> bool:
 
 def _mark_prompted() -> None:
     STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"prompted_at": datetime.now(timezone.utc).isoformat()}
+    payload = {"prompted_at": datetime.now(UTC).isoformat()}
     STATE_PATH.write_text(f"{json.dumps(payload, indent=2)}\n", encoding="utf-8")
 
 

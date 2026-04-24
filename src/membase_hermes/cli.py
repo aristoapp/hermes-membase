@@ -5,19 +5,22 @@ import hashlib
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .config import (
     DEFAULT_API_URL,
     DEFAULT_CONFIG_PATH,
     DEFAULT_TOKEN_FILE_PATH,
+    TokenPair,
     load_membase_config_file,
     read_json_file,
     save_membase_config_file,
     write_token_file,
-    TokenPair,
 )
 from .star_prompt import maybe_prompt_github_star
+
+if TYPE_CHECKING:
+    from .client import MembaseClient
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:

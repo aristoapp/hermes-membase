@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 
+from . import __version__ as _HERMES_VERSION
+
 DEFAULT_TIMEOUT_S = 15.0
+USER_AGENT = f"membase-hermes/{_HERMES_VERSION}"
 TokenRefreshCallback = Callable[[str, str], None]
 
 
@@ -76,7 +80,10 @@ class MembaseClient:
             }
             response = self._http.post(
                 f"{self.api_url}/oauth/token",
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": USER_AGENT,
+                },
                 data=data,
             )
             if response.status_code >= 400:
@@ -111,7 +118,10 @@ class MembaseClient:
         form_body: dict[str, Any] | None = None,
         expect_json: bool = True,
     ) -> Any:
-        headers = {"Authorization": f"Bearer {self.access_token}"}
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "User-Agent": USER_AGENT,
+        }
         if form_body is not None:
             headers["Content-Type"] = "application/x-www-form-urlencoded"
         elif json_body is not None:
@@ -246,8 +256,11 @@ class MembaseClient:
                 "/agents/connect",
                 json_body={"source": self.source},
             )
-        except MembaseApiError:
-            # Fire-and-forget analytics signal. Not a hard failure.
+        except Exception:
+            # Fire-and-forget signal for the dashboard's Agents tab.
+            # Network failures / 4xx / token issues must never impact the
+            # provider's ability to serve memory queries.
+            self._log("register_connection failed (ignored)")
             return
 
     def search_wiki(

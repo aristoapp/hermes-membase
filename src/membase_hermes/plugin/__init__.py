@@ -36,7 +36,9 @@ if _BUNDLE.exists() and str(_HERE) not in sys.path:
 try:
     from _membase_hermes.provider import MembaseMemoryProvider  # bundled
 except ImportError:
-    from membase_hermes.provider import MembaseMemoryProvider  # local dev / editable install
+    from membase_hermes.provider import (
+        MembaseMemoryProvider,  # local dev / editable install
+    )
 
 
 def register(ctx) -> None:
