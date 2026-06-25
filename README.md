@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://x.com/intent/follow?screen_name=mem_base"><img src="https://img.shields.io/badge/Follow%20on%20X-000000?style=for-the-badge&logo=x&logoColor=white" alt="Follow on X"></a>
-  <a href="https://www.linkedin.com/company/aristotechnologies"><img src="https://img.shields.io/badge/Follow%20on%20LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="Follow on LinkedIn"></a>
+  <a href="https://www.linkedin.com/company/aristo"><img src="https://img.shields.io/badge/Follow%20on%20LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="Follow on LinkedIn"></a>
   <a href="https://discord.gg/qfzXNdtmkv"><img src="https://img.shields.io/badge/Join%20Our%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join Our Discord"></a>
   <a href="https://pypi.org/project/hermes-membase/"><img src="https://img.shields.io/pypi/v/hermes-membase?style=for-the-badge&color=blue" alt="PyPI version"></a>
 </p>
