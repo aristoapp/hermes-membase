@@ -4,7 +4,7 @@ import threading
 import time
 import unittest
 
-from membase_hermes.capture import CaptureWorker
+from membase_hermes.capture import CaptureJob, CaptureWorker
 from membase_hermes.config import MembaseConfig
 from membase_hermes.provider import MAX_BUFFER_SIZE, SILENCE_TIMEOUT_S, MembaseMemoryProvider
 
@@ -15,12 +15,13 @@ class BlockingClient:
         self.started = threading.Event()
         self.release = threading.Event()
 
-    def ingest(
+    def create_wiki_document(
         self,
+        title: str,
         content: str,
         *,
-        display_summary: str | None = None,
         project: str | None = None,
+        source_metadata: dict[str, object] | None = None,
     ) -> dict[str, str]:
         self.calls.append(content)
         self.started.set()
@@ -34,19 +35,48 @@ class BlockingClient:
 class RecordingClient:
     def __init__(self) -> None:
         self.calls: list[str] = []
+        self.titles: list[str] = []
+        self.source_metadata: list[dict[str, object] | None] = []
 
-    def ingest(
+    def create_wiki_document(
         self,
+        title: str,
         content: str,
         *,
-        display_summary: str | None = None,
         project: str | None = None,
+        source_metadata: dict[str, object] | None = None,
     ) -> dict[str, str]:
+        self.titles.append(title)
         self.calls.append(content)
+        self.source_metadata.append(source_metadata)
         return {"ok": "true"}
 
     def close(self) -> None:
         return None
+
+
+class FailingPartClient(RecordingClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.fail_second_part = True
+
+    def create_wiki_document(
+        self,
+        title: str,
+        content: str,
+        *,
+        project: str | None = None,
+        source_metadata: dict[str, object] | None = None,
+    ) -> dict[str, str]:
+        if self.fail_second_part and source_metadata and source_metadata.get("part_index") == 2:
+            self.fail_second_part = False
+            raise RuntimeError("temporary wiki outage")
+        return super().create_wiki_document(
+            title,
+            content,
+            project=project,
+            source_metadata=source_metadata,
+        )
 
 
 def make_provider(client: object) -> MembaseMemoryProvider:
@@ -111,13 +141,18 @@ class ProviderCaptureTests(unittest.TestCase):
         client = RecordingClient()
         provider = make_provider(client)
 
-        provider.sync_turn(memory_text(1), "", session_id="session")
-        provider.sync_turn(memory_text(2), "", session_id="session")
+        provider.sync_turn(memory_text(1), "Assistant reply one.", session_id="session")
+        provider.sync_turn(memory_text(2), "Assistant reply two.", session_id="session")
         provider.on_session_end([])
 
         self.assertEqual(len(client.calls), 1)
+        self.assertIn("### User", client.calls[0])
         self.assertIn("Important project context number 1", client.calls[0])
         self.assertIn("Important project context number 2", client.calls[0])
+        self.assertIn("### Assistant", client.calls[0])
+        self.assertIn("Assistant reply one.", client.calls[0])
+        self.assertIn("Assistant reply two.", client.calls[0])
+        self.assertNotIn("- Session:", client.calls[0])
 
         provider.shutdown()
 
@@ -132,6 +167,62 @@ class ProviderCaptureTests(unittest.TestCase):
         self.assertIn("Important project context number 1", client.calls[0])
 
         provider.shutdown()
+
+    def test_capture_worker_splits_large_wiki_documents(self) -> None:
+        client = RecordingClient()
+        worker = CaptureWorker(
+            client=client,  # type: ignore[arg-type]
+            max_retries=0,
+            retry_delay_s=0,
+        )
+        worker.start()
+
+        queued = worker.enqueue(
+            CaptureJob(
+                content="A" * 140_000,
+            ),
+        )
+        self.assertTrue(queued)
+        self.assertTrue(worker.drain(timeout_s=1.0))
+
+        self.assertGreater(len(client.calls), 1)
+        self.assertIn("A", client.calls[0])
+        for index, content in enumerate(client.calls, start=1):
+            self.assertLessEqual(len(content), 95_000)
+            self.assertIn(f"part {index}", client.titles[index - 1])
+            metadata = client.source_metadata[index - 1]
+            self.assertIsNotNone(metadata)
+            assert metadata is not None
+            self.assertEqual(metadata.get("capture_kind"), "conversation_transcript")
+            self.assertNotIn("session_id", metadata)
+            self.assertEqual(metadata.get("part_index"), index)
+            self.assertEqual(metadata.get("part_total"), len(client.calls))
+
+        worker.stop()
+
+    def test_capture_worker_retries_only_unsaved_wiki_parts(self) -> None:
+        client = FailingPartClient()
+        worker = CaptureWorker(
+            client=client,  # type: ignore[arg-type]
+            max_retries=1,
+            retry_delay_s=0,
+        )
+        worker.start()
+
+        queued = worker.enqueue(
+            CaptureJob(
+                content="A" * 140_000,
+            ),
+        )
+        self.assertTrue(queued)
+        self.assertTrue(worker.drain(timeout_s=1.0))
+
+        created_parts = [metadata.get("part_index") for metadata in client.source_metadata if metadata is not None]
+        self.assertEqual(created_parts.count(1), 1)
+        self.assertIn(2, created_parts)
+        self.assertEqual(len({metadata.get("part_total") for metadata in client.source_metadata if metadata}), 1)
+
+        worker.stop()
 
     def test_silence_timeout_flushes_previous_capture_window(self) -> None:
         client = RecordingClient()

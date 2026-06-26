@@ -69,8 +69,8 @@ User message
 └───────────┬─────────────┘
             ▼
 ┌─────────────────────────┐
-│  Auto-Capture           │  Buffers messages, flushes to Membase
-│  (on_session_end)       │  for entity/relationship extraction
+│  Auto-Capture           │  Buffers user/assistant turns and writes
+│  (on_session_end)       │  original transcripts to Membase Wiki
 └───────────┬─────────────┘
             ▼
 ┌─────────────────────────┐
@@ -85,7 +85,7 @@ User message
 ```
 
 - **Auto-Recall**: Before every AI turn, searches memory and wiki context (when enabled) and injects relevant snippets. Skips casual chat and short messages. Respects a `maxRecallChars` budget (default 4000) to avoid oversized context.
-- **Auto-Capture**: Buffers user messages and flushes them to Membase at session end. During an active session it flushes after 5 minutes of silence or 20 buffered messages. Requires 50+ characters total to avoid capturing tiny one-off messages.
+- **Auto-Capture**: Buffers user and assistant messages and flushes original transcripts to Membase Wiki at session end. During an active session it flushes after 5 minutes of silence or 20 buffered messages. Requires 50+ characters total to avoid capturing tiny one-off messages.
 - **Mirror Built-in**: When Hermes writes to its built-in `MEMORY.md` via the `memory` tool, those writes are automatically mirrored to Membase in the background. A local hash index prevents duplicates.
 - **Knowledge Graph**: Unlike simple vector-only memory, Membase uses hybrid vector search and a knowledge graph to store entities, relationships, and facts.
 
@@ -95,13 +95,14 @@ The agent uses these tools autonomously during conversations:
 
 | Tool | Description |
 | --- | --- |
-| `membase_search` | Search memories by semantic similarity. Supports date filtering (`date_from`, `date_to`, `timezone`) and source filtering (`sources`). Defaults to 20 results and caps at 30. Returns a compact OpenClaw-compatible text list with related facts, not raw bundles. Long summaries/facts are preview-truncated in Hermes tool output. |
+| `membase_search` | Search memories by semantic similarity. Supports date filtering (`date_from`, `date_to`, `timezone`) and source filtering (`sources` — integrations, AI clients including `codex`/`hermes`, imports, `notion`, and other sources). Defaults to 20 results and caps at 30. Returns a compact OpenClaw-compatible text list with related facts, not raw bundles. Long summaries/facts are preview-truncated in Hermes tool output. |
+| `membase_get_current_date` | Return runtime local and UTC time before converting relative dates into `date_from`/`date_to`. |
 | `membase_store` | Save important information to long-term memory. Use for preferences, goals, decisions, and context. Requires `display_summary` and caps content at 50,000 characters. |
 | `membase_forget` | Delete a memory. Shows matches first, then deletes after confirmation (two-step). |
 | `membase_profile` | Retrieve user profile and related memories for session context. |
-| `membase_search_wiki` | Search wiki documents for stable factual references. Defaults to 10 results and caps at 20. Returns full document content, matching MCP and OpenClaw behavior. |
-| `membase_add_wiki` | Create a wiki document from markdown content. |
-| `membase_update_wiki` | Update title, content, or collection of an existing wiki document. |
+| `membase_search_wiki` | Search wiki documents for stable factual references. Defaults to 10 results and caps at 20. Labels Project, Basic, or Unknown destinations and keeps long document bodies preview-truncated in Hermes output. |
+| `membase_add_wiki` | Create a wiki document from full markdown content and an optional Project filing location. Reports the returned destination. |
+| `membase_update_wiki` | Update title/content/Project for an existing wiki document. Set Project to `null` to move to Basic. Reports the returned destination. |
 | `membase_delete_wiki` | Delete a wiki document. Shows matches first, then deletes after confirmation (two-step). |
 
 ## CLI Commands
@@ -126,7 +127,7 @@ Config is stored in `~/.hermes/membase.json`. All keys are optional and have sen
 | `tokenFile` | string | `~/.hermes/credentials/membase.json` | OAuth token cache path. Stored outside the plugin directory so it survives updates. |
 | `autoRecall` | boolean | `false` | Inject relevant memories before every AI turn. |
 | `autoWikiRecall` | boolean | `false` | Inject relevant wiki documents before every AI turn. |
-| `autoCapture` | boolean | `true` | Automatically store conversations to Membase. |
+| `autoCapture` | boolean | `true` | Automatically store user/assistant conversation transcripts to Wiki. |
 | `mirrorBuiltin` | boolean | `true` | Mirror Hermes built-in memory writes to Membase. |
 | `maxRecallChars` | number | `4000` | Max characters of injected memory context per turn (500-16000). |
 | `debug` | boolean | `false` | Enable verbose debug logs. |

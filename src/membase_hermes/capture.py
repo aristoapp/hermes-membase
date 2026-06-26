@@ -5,15 +5,58 @@ import queue
 import threading
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from .client import MembaseClient
+
+MAX_WIKI_CAPTURE_CHARS = 95_000
 
 
 @dataclass(frozen=True)
 class CaptureJob:
     content: str
-    display_summary: str | None = None
+    title: str | None = None
     project: str | None = None
+    source_metadata: dict[str, object] | None = None
+
+
+def _split_content(content: str) -> list[str]:
+    if len(content) <= MAX_WIKI_CAPTURE_CHARS:
+        return [content]
+    chunks: list[str] = []
+    current: list[str] = []
+    current_size = 0
+
+    def push_current() -> None:
+        nonlocal current, current_size
+        if current:
+            chunks.append("\n\n".join(current).strip())
+            current = []
+            current_size = 0
+
+    for block in content.split("\n\n"):
+        if len(block) > MAX_WIKI_CAPTURE_CHARS:
+            if current:
+                remaining_space = MAX_WIKI_CAPTURE_CHARS - current_size - 2
+                if remaining_space > 0:
+                    current.append(block[:remaining_space])
+                    block = block[remaining_space:]
+                push_current()
+            for start in range(0, len(block), MAX_WIKI_CAPTURE_CHARS):
+                chunk = block[start : start + MAX_WIKI_CAPTURE_CHARS]
+                if chunk:
+                    chunks.append(chunk)
+        elif current and current_size + 2 + len(block) > MAX_WIKI_CAPTURE_CHARS:
+            push_current()
+            current = [block]
+            current_size = len(block)
+        else:
+            if current:
+                current_size += 2
+            current.append(block)
+            current_size += len(block)
+    push_current()
+    return [chunk for chunk in chunks if chunk.strip()]
 
 
 class CaptureWorker:
@@ -111,18 +154,45 @@ class CaptureWorker:
         content = job.content.strip()
         if not content:
             return
+        captured_at = datetime.now(UTC).isoformat()
+        document_body = "\n".join(
+            [
+                "# Hermes Conversation Capture",
+                "",
+                f"- Captured at: {captured_at}",
+                "",
+                "## Transcript",
+                "",
+                content,
+            ],
+        )
+        chunks = _split_content(document_body)
 
+        next_chunk_index = 0
         for attempt in range(self.max_retries + 1):
             try:
-                self.client.ingest(
-                    content,
-                    display_summary=job.display_summary,
-                    project=job.project,
-                )
+                for offset, chunk in enumerate(chunks[next_chunk_index:], start=next_chunk_index):
+                    index = offset + 1
+                    multi_part = len(chunks) > 1
+                    title = job.title or f"Hermes conversation capture - {captured_at}"
+                    if multi_part:
+                        title = f"{title} part {index}"
+                    self.client.create_wiki_document(
+                        title=title,
+                        content=chunk,
+                        project=job.project,
+                        source_metadata={
+                            "capture_kind": "conversation_transcript",
+                            "captured_at": captured_at,
+                            "part_index": index,
+                            "part_total": len(chunks),
+                        },
+                    )
+                    next_chunk_index = index
                 return
             except Exception as error:
                 if attempt >= self.max_retries:
-                    self.logger.debug("capture ingest failed after retries: %s", error)
+                    self.logger.debug("capture wiki save failed after retries: %s", error)
                     return
                 if self.retry_delay_s > 0:
                     time.sleep(self.retry_delay_s * (attempt + 1))
