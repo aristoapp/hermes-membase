@@ -24,6 +24,10 @@ Give your [Hermes Agent](https://hermes-agent.nousresearch.com/) persistent memo
 
 > **Free to start**: Sign up at [app.membase.so](https://app.membase.so) and connect in under a minute.
 
+## Companion X/Twitter Memory
+
+When paired with [Hermes Tweet](https://github.com/Xquik-dev/hermes-tweet), Membase can preserve brand voice, audience segments, campaign decisions, and prior monitoring notes across X/Twitter sessions. Keep Hermes Tweet responsible for live X/Twitter reads and optional actions, then let Membase store the reusable context that should survive the current Hermes run.
+
 ## Install
 
 ```bash
